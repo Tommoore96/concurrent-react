@@ -3,7 +3,7 @@
 // http://localhost:3000/isolated/exercises/06
 
 import React from 'react'
-import fetchPokemon, {getImageUrlForPokemon} from '../fetch-pokemon'
+import fetchPokemon, { getImageUrlForPokemon } from '../fetch-pokemon'
 import {
   ErrorBoundary,
   createResource,
@@ -23,7 +23,7 @@ import {
 // and if you want to slow things down you should use the Network tab
 // in your developer tools to throttle your network to something like "Slow 3G"
 
-function PokemonInfo({pokemonResource}) {
+function PokemonInfo({ pokemonResource }) {
   const pokemon = pokemonResource.data.read()
   return (
     <div>
@@ -59,26 +59,34 @@ function createPokemonResource(pokemonName) {
   const image = createResource(() =>
     preloadImage(getImageUrlForPokemon(lowerName)),
   )
-  return {data, image}
+  return { data, image }
+}
+
+function usePokemonResource(pokemonName) {
+  const [startTransition, isPending] = React.useTransition(SUSPENSE_CONFIG)
+  const [pokemonResource, setPokemonResource] = React.useState(null)
+  React.useLayoutEffect(() => {
+    if (!pokemonName) {
+      return
+    }
+    startTransition(() => {
+      setPokemonResource(getPokemonResource(pokemonName))
+    })
+  }, [pokemonName])
+  return [pokemonResource, isPending]
 }
 
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
-  // 🐨 move these two lines to a custom hook called usePokemonResource
-
+  const [pokemonResource, isPending] = usePokemonResource(pokemonName)
   // 🐨 call usePokemonResource with the pokemonName.
   //    It should return both the pokemonResource and isPending
-  const [startTransition, isPending] = React.useTransition(SUSPENSE_CONFIG)
-  const [pokemonResource, setPokemonResource] = React.useState(null)
 
   function handleSubmit(newPokemonName) {
     setPokemonName(newPokemonName)
     // 🐨 move this startTransition call to a useLayoutEffect inside your
     //    custom usePokemonResource hook (it should list pokemonName as a
     //    dependency).
-    startTransition(() => {
-      setPokemonResource(getPokemonResource(newPokemonName))
-    })
     // 💰 tip: in your effect callback, if pokemonName is an empty string,
     //    return early.
   }
@@ -97,8 +105,8 @@ function App() {
             </React.Suspense>
           </ErrorBoundary>
         ) : (
-          'Submit a pokemon'
-        )}
+            'Submit a pokemon'
+          )}
       </div>
     </div>
   )

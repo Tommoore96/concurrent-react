@@ -3,7 +3,7 @@
 // http://localhost:3000/isolated/exercises/05
 
 import React from 'react'
-import fetchPokemon from '../fetch-pokemon'
+import fetchPokemon, { getImageUrlForPokemon } from '../fetch-pokemon'
 import {
   ErrorBoundary,
   createResource,
@@ -11,6 +11,7 @@ import {
   PokemonForm,
   PokemonDataView,
 } from '../utils'
+import { Promise } from 'q';
 
 // By default, all fetches are mocked so we can control the time easily.
 // You can adjust the fetch time with this:
@@ -37,13 +38,33 @@ import {
 // 💰 Here's what rendering the <img /> should look like:
 // <img src={imgSrcResource.read()} {...props} />
 
-function PokemonInfo({pokemonResource}) {
-  const pokemon = pokemonResource.read()
+function preloadImg(src) {
+  return new Promise(resolve => {
+    const img = document.createElement('img')
+    img.src = src
+    img.onload = () => resolve(src)
+  })
+}
+
+const imgSrcResourceCache = {}
+
+function Img({ src, alt, ...props }) {
+  console.log('cache: ', imgSrcResourceCache);
+
+  let imgSrcResource = imgSrcResourceCache[src]
+  if (!imgSrcResource) {
+    imgSrcResource = createResource((() => preloadImg(src)))
+    imgSrcResourceCache[src] = imgSrcResource
+  }
+  return <img src={imgSrcResource.read()} alt={alt} {...props} />
+}
+
+function PokemonInfo({ pokemonResource }) {
+  const pokemon = pokemonResource.data.read()
   return (
     <div>
       <div className="pokemon-info__img-wrapper">
-        {/* 🐨 swap this img for your new Img component */}
-        <img src={pokemon.image} alt={pokemon.name} />
+        <Img src={pokemonResource.image.read()} alt={pokemon.name} />
       </div>
       <PokemonDataView pokemon={pokemon} />
     </div>
@@ -69,7 +90,10 @@ function getPokemonResource(name) {
 }
 
 function createPokemonResource(pokemonName) {
-  return createResource(() => fetchPokemon(pokemonName))
+  const lowerName = pokemonName.toLowerCase()
+  const data = createResource(() => fetchPokemon(lowerName))
+  const image = createResource((() => preloadImg(getImageUrlForPokemon(lowerName))))
+  return { image, data }
 }
 
 function App() {
@@ -98,8 +122,8 @@ function App() {
             </React.Suspense>
           </ErrorBoundary>
         ) : (
-          'Submit a pokemon'
-        )}
+            'Submit a pokemon'
+          )}
       </div>
     </div>
   )

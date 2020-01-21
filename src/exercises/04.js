@@ -22,7 +22,7 @@ import {
 // and if you want to slow things down you should use the Network tab
 // in your developer tools to throttle your network to something like "Slow 3G"
 
-function PokemonInfo({pokemonResource}) {
+function PokemonInfo({ pokemonResource }) {
   const pokemon = pokemonResource.read()
   return (
     <div>
@@ -47,6 +47,18 @@ const SUSPENSE_CONFIG = {
 // and inserts it into the cache. Finally the function should return the
 // resource.
 
+const pokemonResourceCache = {}
+
+function getPokemonResource(name) {
+  const lowerName = name.toLowerCase()
+  let resource = pokemonResourceCache[lowerName]
+  if (!resource) {
+    resource = createPokemonResource(lowerName)
+    pokemonResourceCache[lowerName] = resource
+  }
+  return resource
+};
+
 function createPokemonResource(pokemonName) {
   return createResource(() => fetchPokemon(pokemonName))
 }
@@ -60,7 +72,7 @@ function App() {
     setPokemonName(newPokemonName)
     startTransition(() => {
       // 🐨 change this to getPokemonResource instead
-      setPokemonResource(createPokemonResource(newPokemonName))
+      setPokemonResource(getPokemonResource(newPokemonName))
     })
   }
 
@@ -78,8 +90,8 @@ function App() {
             </React.Suspense>
           </ErrorBoundary>
         ) : (
-          'Submit a pokemon'
-        )}
+            'Submit a pokemon'
+          )}
       </div>
     </div>
   )

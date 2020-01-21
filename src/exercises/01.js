@@ -3,15 +3,15 @@
 // http://localhost:3000/isolated/exercises/01
 
 import React from 'react'
-import {PokemonDataView} from '../utils'
+import { PokemonDataView } from '../utils'
 // 🐨 you'll need to import the fetchPokemon function
 // 💰 here you go:
-// import fetchPokemon from '../fetch-pokemon'
+import fetchPokemon from '../fetch-pokemon'
 // 💰 use it like this: fetchPokemon(pokemonName).then(handleSuccess, handleFailure)
 
 // you'll also need the ErrorBoundary component from utils
 // 💰 here you go:
-// import {ErrorBoundary} from '../utils'
+import { ErrorBoundary, createResource, PokemonInfoFallback } from '../utils'
 // 💰 use it like this: <ErrorBoundary><SomeOtherComponents /></ErrorBoundary>
 
 // By default, all fetches are mocked so we can control the time easily.
@@ -27,15 +27,8 @@ import {PokemonDataView} from '../utils'
 // 🐨 create the following mutable variable references (using let):
 // pokemon, pokemonError, pokemonPromise
 
-// 💣 delete this now...
-const pokemon = {
-  name: 'TODO',
-  number: 'TODO',
-  attacks: {
-    special: [{name: 'TODO', type: 'TODO', damage: 'TODO'}],
-  },
-  fetchedAt: 'TODO',
-}
+
+const pokemonResource = createResource(() => fetchPokemon('pikachu'))
 
 // We don't need the app to be mounted to know that we want to fetch the pokemon
 // named "pikachu" so we can go ahead and do that right here.
@@ -45,9 +38,8 @@ const pokemon = {
 // 🐨 if the promise fails, set the pokemonError variable to the error
 
 function PokemonInfo() {
-  // 🐨 if pokemonError is defined, then throw it here
-  // 🐨 if there's no pokemon yet, then throw the pokemonPromise
-  // 💰 (no, for real. Like: `throw pokemonPromise`)
+
+  const pokemon = pokemonResource.read()
 
   // if the code gets it this far, then the pokemon variable is defined and
   // rendering can continue!
@@ -64,12 +56,11 @@ function PokemonInfo() {
 function App() {
   return (
     <div className="pokemon-info">
-      {/*
-        🐨 Wrap the PokemonInfo component with a React.Suspense component with a fallback
-        🐨 Then wrap all that with an <ErrorBoundary /> to catch errors
-        💰 I wrote the ErrorBoundary for you. You can take a look at it in the utils file if you want
-      */}
-      <PokemonInfo />
+      <ErrorBoundary>
+        <React.Suspense fallback={<PokemonInfoFallback name="Pikachu" />}>
+          <PokemonInfo />
+        </React.Suspense>
+      </ErrorBoundary>
     </div>
   )
 }
